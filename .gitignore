@@ -1,0 +1,102 @@
+# --------------------------------------
+# Node.js
+# --------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+*.tmp
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# dotenv environment files
+.env
+.env.*
+!.env.example
+
+# --------------------------------------
+# Next.js
+# --------------------------------------
+.next/
+out/
+dist/
+
+# Build output
+build/
+.cache/
+
+# Next.js serverless build
+.serverless/
+.vercel/
+
+# Vercel deployment folder
+.vercel/
+
+# Next.js static
+web/.next/
+web/out/
+
+# --------------------------------------
+# Prisma
+# --------------------------------------
+prisma/migrations/**/migration.sql
+prisma/dev.db
+prisma/dev.db-journal
+
+# SQLite backups
+*.db
+*.db-journal
+
+# --------------------------------------
+# OS / System Files
+# --------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Linux / Mac caches
+.cache/
+.config/
+
+# --------------------------------------
+# IDE / Editor folders
+# --------------------------------------
+.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+.idea/
+*.swp
+
+# --------------------------------------
+# Docker
+# --------------------------------------
+docker-data/
+*.tar
+
+# --------------------------------------
+# temp folders
+# --------------------------------------
+tmp/
+temp/
+*.local
+
+# --------------------------------------
+# Test coverage
+# --------------------------------------
+coverage/
+
+# --------------------------------------
+# Package lock files (optional)
+# Uncomment if using only one package manager
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
