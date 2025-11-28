@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  twitchId      String   @unique
+  displayName   String
+  profileImage  String?
+  createdAt     DateTime @default(now())
+  points        Int      @default(0)
+  wins          Int      @default(0)
+  lastActive    DateTime @updatedAt
+  events        EventParticipation[]
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  name            String
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  active          Boolean  @default(true)
+  description     String?
+  participations  EventParticipation[]
+}
+
+model EventParticipation {
+  id       String  @id @default(cuid())
+  user     User    @relation(fields: [userId], references: [id])
+  userId   String
+  event    Event   @relation(fields: [eventId], references: [id])
+  eventId  String
+  points   Int     @default(0)
+  rank     Int?
+}
