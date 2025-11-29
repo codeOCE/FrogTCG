@@ -1,0 +1,172 @@
+/* ===========================
+   GLOBAL OVERLAY BACKGROUND
+   =========================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#overlay-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* ===========================
+   MAIN SCENE WRAPPER
+   =========================== */
+
+#pack-scene {
+  position: relative;
+  width: 380px;   /* smaller footprint */
+  height: 520px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+/* ===========================
+   FLASH EFFECT
+   =========================== */
+
+#flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* ===========================
+   PACK + FLAP
+   =========================== */
+
+#pack-wrapper {
+  position: absolute;
+  width: 220px;    /* smaller pack */
+  height: 360px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+/* bottom portion of the pack (everything except top flap) */
+#pack-base {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform-origin: center top;
+  /* hide the top ~30% so the flap can be separated */
+  clip-path: inset(30% 0 0 0);
+}
+
+/* top flap (the part that tears off) */
+#pack-flap {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform-origin: center top;
+  /* show only the top ~30% */
+  clip-path: inset(0 0 70% 0);
+  opacity: 0; /* becomes visible on tear */
+}
+
+/* ===========================
+   CARD
+   =========================== */
+
+#card-wrapper {
+  position: absolute;
+  width: 220px;
+  height: 360px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+#card-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7));
+}
+
+/* ===========================
+   SPARKS (simple rip burst)
+   =========================== */
+
+#sparks-container {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  width: 220px;
+  height: 80px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 20px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff 0%, #ffd54f 40%, transparent 100%);
+  opacity: 0;
+  filter: blur(2px);
+}
+
+/* ===========================
+   LABEL TEXT
+   =========================== */
+
+#label-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  color: #f9fafb;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+  font-size: 14px;
+}
+
+#label-user {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+#label-card {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+#label-rarity {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 1px;
+}

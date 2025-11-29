@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FrogTCG Pack Alert</title>
+  <link rel="stylesheet" href="/pack-alert.css" />
+</head>
+
+<body>
+  <div id="overlay-root">
+    <div id="pack-scene">
+
+      <div id="flash"></div>
+
+      <!-- 12 reusable sparks -->
+      <div id="sparks-container">
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+      </div>
+
+      <<div id="pack-wrapper">
+  <!-- Base pack (bottom part only after tear) -->
+  <img id="pack-base" src="/placeholder-pack.png" alt="Booster Pack" />
+  <!-- Flap (top part that tears off) -->
+  <img id="pack-flap" src="/placeholder-pack.png" alt="Booster Pack Flap" />
+</div>
+
+<div id="card-wrapper">
+  <img id="card-img" src="/placeholder-card.png" alt="Card" />
+</div>
+
+
+      <div id="label-wrapper">
+        <div id="label-user"></div>
+        <div id="label-card"></div>
+        <div id="label-rarity"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SFX -->
+  <audio id="sfx-rip" src="/sfx-rip.mp3" preload="auto"></audio>
+  <audio id="sfx-reveal" src="/sfx-reveal.mp3" preload="auto"></audio>
+
+  <!-- Your animation logic -->
+   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="/pack-alert.js"></script>
+</body>
+</html>
