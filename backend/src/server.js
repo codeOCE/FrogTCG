@@ -22,7 +22,7 @@ app.use(
   })
 );
 
-// ---------- Body Parsing ----------
+// ---------- Body Parsing (normal requests) ----------
 app.use(bodyParser.json());
 
 // ---------- Cookies for login ----------
@@ -34,7 +34,7 @@ app.use(
   })
 );
 
-// ---------- Serve overlay assets ----------
+// ---------- Serve static assets (overlay files) ----------
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 // ---------- ROUTES ----------
@@ -42,14 +42,17 @@ app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
 app.use("/admin", adminRoutes);
 
-// IMPORTANT: EventSub must load BEFORE 404 handler
+// IMPORTANT — must come BEFORE any 404 or static fallback
 app.use("/eventsub", eventsubRoutes);
+
+// ---------- Optional Health Check ----------
+app.get("/health", (req, res) => res.send("OK"));
 
 // ---------- SERVER ----------
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
-  console.log(`🌍 Public URL: ${process.env.PUBLIC_URL}`);
+  console.log(`🌍 PUBLIC URL: ${process.env.PUBLIC_URL}`);
 });
 
 startWs(server);

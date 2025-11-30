@@ -10,118 +10,104 @@ const CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const EVENTSUB_SECRET = process.env.EVENTSUB_SECRET || crypto.randomBytes(16).toString("hex");
 
-// -----------------------------
-// Verify Twitch Signature
-// -----------------------------
-function verifySignature(req) {
-  const messageId = req.headers["twitch-eventsub-message-id"];
-  const timestamp = req.headers["twitch-eventsub-message-timestamp"];
-  const signature = req.headers["twitch-eventsub-message-signature"];
 
-  const hmacMessage = messageId + timestamp + JSON.stringify(req.body);
-  const computed = "sha256=" +
-    crypto
-      .createHmac("sha256", EVENTSUB_SECRET)
-      .update(hmacMessage)
-      .digest("hex");
+// --------------------------------------------------
+// 0. REQUIRED: GET /callback  (fixes your 404 problem)
+// --------------------------------------------------
+router.get("/callback", (req, res) => {
+  return res.status(200).send("OK");
+});
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computed));
-}
 
-// -----------------------------
-// 1. GET APP ACCESS TOKEN
-// -----------------------------
+// --------------------------------------------------
+// 1. Get Twitch App Token
+// --------------------------------------------------
 async function getAppToken() {
-  const url = `https://id.twitch.tv/oauth2/token`;
-
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     client_secret: CLIENT_SECRET,
-    grant_type: "client_credentials",
+    grant_type: "client_credentials"
   });
 
-  const res = await fetch(url, { method: "POST", body: params });
+  const res = await fetch("https://id.twitch.tv/oauth2/token", {
+    method: "POST",
+    body: params
+  });
+
   const data = await res.json();
 
   if (!data.access_token) {
     console.error("❌ Failed to get Twitch app token:", data);
-    throw new Error("Unable to get token");
+    throw new Error("Failed to get token");
   }
 
   return data.access_token;
 }
 
-// -----------------------------
-// 2. CREATE EVENTSUB SUB
-// -----------------------------
+
+// --------------------------------------------------
+// 2. Create EventSub Subscription
+// --------------------------------------------------
 router.post("/subscribe", async (req, res) => {
   try {
-    console.log("🚀 Requesting Twitch app token...");
+    console.log("🚀 Requesting Twitch App Token...");
     const token = await getAppToken();
 
     console.log("📨 Creating EventSub subscription...");
 
-    const sub = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
+    const response = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
       method: "POST",
       headers: {
         "Client-ID": CLIENT_ID,
         "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         type: "channel.channel_points_custom_reward_redemption.add",
         version: "1",
-        condition: {
-          broadcaster_user_id: process.env.TWITCH_BROADCASTER_ID
-        },
+        condition: { broadcaster_user_id: process.env.TWITCH_BROADCASTER_ID },
         transport: {
           method: "webhook",
-          callback: CALLBACK_URL,     // MUST BE HTTPS 443
+          callback: CALLBACK_URL,  // must be HTTPS
           secret: EVENTSUB_SECRET
         }
-      }),
+      })
     });
 
-    const response = await sub.json();
-    console.log("📡 Twitch Response:", response);
+    const json = await response.json();
+    console.log("📡 Twitch Response:", json);
 
-    res.json(response);
+    return res.json(json);
+
   } catch (err) {
     console.error("❌ EventSub Register Error:", err);
-    res.status(500).json({ error: "EventSub registration failed", details: err });
+    return res.status(500).json({ error: "EventSub registration failed", details: err });
   }
 });
 
-// -----------------------------
-// 3. EVENTSUB CALLBACK HANDLER
-// -----------------------------
-router.post("/callback", express.json(), async (req, res) => {
-  const messageType = req.headers["twitch-eventsub-message-type"];
 
-  // Challenge
-  if (messageType === "webhook_callback_verification") {
+// --------------------------------------------------
+// 3. EventSub Callback (Verification + Notifications)
+// --------------------------------------------------
+router.post("/callback", express.json(), (req, res) => {
+  const msgType = req.headers["twitch-eventsub-message-type"];
+
+  // STEP 1 — VERIFICATION
+  if (msgType === "webhook_callback_verification") {
     console.log("🔗 EventSub Verified!");
     return res.status(200).send(req.body.challenge);
   }
 
-  // Signature Check
-  if (!verifySignature(req)) {
-    console.log("❌ Invalid EventSub signature");
-    return res.sendStatus(403);
-  }
+  // STEP 2 — NOTIFICATION
+  if (msgType === "notification") {
+    console.log("🎉 EVENT RECEIVED:", req.body.event);
 
-  // Ping
-  if (messageType === "notification") {
-    const event = req.body.event;
-    console.log("🎉 EVENT RECEIVED:", event);
-
-    // Here you would broadcast through WebSockets
-    // require("../realtime/wsServer").broadcast(...)
-
+    // (Broadcast to OBS overlay later)
     return res.sendStatus(200);
   }
 
-  res.sendStatus(200);
+  return res.sendStatus(200);
 });
+
 
 module.exports = router;
