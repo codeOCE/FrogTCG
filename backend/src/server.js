@@ -5,39 +5,78 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const path = require("path");
 
+// Routes
+const authRoutes = require("./routes/auth");
+const apiRoutes = require("./routes/api");
+const adminRoutes = require("./routes/admin");
+const eventsubRoutes = require("./routes/eventsub");
+
+// WebSocket server
 const { startWs } = require("./realtime/wsServer");
 
-// Create express app FIRST
 const app = express();
 
-// Middleware
-app.use(cors({ origin: true, credentials: true }));
-app.use(bodyParser.json());
-app.use(cookieSession({
-  name: "session",
-  keys: [process.env.SESSION_SECRET || "dev_secret"],
-  maxAge: 24 * 60 * 60 * 1000
-}));
+/* ---------------------------------------------
+   CORS
+--------------------------------------------- */
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
-// Static files
+/* ---------------------------------------------
+   Body Parsing
+--------------------------------------------- */
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+/* ---------------------------------------------
+   Session Cookies
+--------------------------------------------- */
+app.use(
+  cookieSession({
+    name: "session",
+    keys: [process.env.SESSION_SECRET || "dev_secret"],
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: "lax",
+  })
+);
+
+/* ---------------------------------------------
+   Static Public Folder (for OBS overlays)
+--------------------------------------------- */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-// Routes (AFTER app exists)
-app.use("/auth", require("./routes/auth"));
-app.use("/api", require("./routes/api"));
-app.use("/admin", require("./routes/admin"));
-app.use("/eventsub", require("./routes/eventsub"));   // <-- FIXED ORDER
+/* ---------------------------------------------
+   Mount Routes
+--------------------------------------------- */
+app.use("/auth", authRoutes);
+app.use("/api", apiRoutes);
+app.use("/admin", adminRoutes);
+app.use("/eventsub", eventsubRoutes);   // *** REQUIRED FOR TWITCH EVENTSUB ***
 
-// Root test route
+/* ---------------------------------------------
+   Root Response
+--------------------------------------------- */
 app.get("/", (req, res) => {
-  res.send("FrogTCG backend running.");
+  res.send("FrogTCG Backend Running 🐸");
 });
 
-// Start HTTP server
+/* ---------------------------------------------
+   Start Server
+--------------------------------------------- */
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 Backend running at http://localhost:${PORT}`);
+  console.log(`🌐 Public URL: ${process.env.PUBLIC_URL}`);
 });
 
-// WebSockets
+/* ---------------------------------------------
+   WebSocket Overlay Server
+--------------------------------------------- */
 startWs(server);
+
+module.exports = app;
