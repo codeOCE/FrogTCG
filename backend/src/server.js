@@ -5,20 +5,16 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const path = require("path");
 
-// Routes
 const authRoutes = require("./routes/auth");
 const apiRoutes = require("./routes/api");
 const adminRoutes = require("./routes/admin");
 const eventsubRoutes = require("./routes/eventsub");
 
-// WebSocket server
 const { startWs } = require("./realtime/wsServer");
 
 const app = express();
 
-/* ---------------------------------------------
-   CORS
---------------------------------------------- */
+// ---------- CORS ----------
 app.use(
   cors({
     origin: true,
@@ -26,57 +22,36 @@ app.use(
   })
 );
 
-/* ---------------------------------------------
-   Body Parsing
---------------------------------------------- */
+// ---------- Body Parsing ----------
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-/* ---------------------------------------------
-   Session Cookies
---------------------------------------------- */
+// ---------- Cookies for login ----------
 app.use(
   cookieSession({
     name: "session",
     keys: [process.env.SESSION_SECRET || "dev_secret"],
-    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: "lax",
   })
 );
 
-/* ---------------------------------------------
-   Static Public Folder (for OBS overlays)
---------------------------------------------- */
+// ---------- Serve overlay assets ----------
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-/* ---------------------------------------------
-   Mount Routes
---------------------------------------------- */
+// ---------- ROUTES ----------
 app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
 app.use("/admin", adminRoutes);
-app.use("/eventsub", eventsubRoutes);   // *** REQUIRED FOR TWITCH EVENTSUB ***
 
-/* ---------------------------------------------
-   Root Response
---------------------------------------------- */
-app.get("/", (req, res) => {
-  res.send("FrogTCG Backend Running 🐸");
-});
+// IMPORTANT: EventSub must load BEFORE 404 handler
+app.use("/eventsub", eventsubRoutes);
 
-/* ---------------------------------------------
-   Start Server
---------------------------------------------- */
+// ---------- SERVER ----------
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Backend running at http://localhost:${PORT}`);
-  console.log(`🌐 Public URL: ${process.env.PUBLIC_URL}`);
+  console.log(`🚀 Backend running on http://localhost:${PORT}`);
+  console.log(`🌍 Public URL: ${process.env.PUBLIC_URL}`);
 });
 
-/* ---------------------------------------------
-   WebSocket Overlay Server
---------------------------------------------- */
 startWs(server);
 
 module.exports = app;
