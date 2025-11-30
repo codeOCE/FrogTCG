@@ -6,9 +6,14 @@ const cookieSession = require("cookie-session");
 const path = require("path");
 
 // Routes
+app.use("/eventsub", require("./routes/eventsub"));
 const authRoutes = require("./routes/auth");
 const apiRoutes = require("./routes/api");
 const adminRoutes = require("./routes/admin");
+const { subscribeToPointsRedemption } = require("./lib/eventsub");
+
+subscribeToPointsRedemption();
+
 
 // WebSocket server
 const { startWs } = require("./realtime/wsServer");
