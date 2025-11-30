@@ -1,263 +1,412 @@
-console.log("FrogTCG pack alert loaded");
+window.runPackAnimation = function (data = {}) {
+  const pack = document.getElementById("pack-container");
+  const flap = document.getElementById("pack-flap");
+  const body = document.getElementById("pack-body");
+  const bodyWrapper = document.getElementById("pack-body-wrapper");
+  const packFoil = document.getElementById("pack-foil");
 
-// SFX helpers
-function playSfx(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.currentTime = 0;
-  el.volume = 0.9;
-  el.play().catch(() => {});
-}
-
-window.runPackAnimation = function (data) {
-  console.log("🔥 runPackAnimation payload:", data);
-
-  const scene = document.getElementById("pack-scene");
-  const packWrapper = document.getElementById("pack-wrapper");
-  const packBase = document.getElementById("pack-base");
-  const packFlap = document.getElementById("pack-flap");
-  const cardWrapper = document.getElementById("card-wrapper");
-  const cardImg = document.getElementById("card-img");
-  const flash = document.getElementById("flash");
-  const sparksContainer = document.getElementById("sparks-container");
-  const sparks = sparksContainer
-    ? Array.from(sparksContainer.querySelectorAll(".spark"))
-    : [];
+  const cardContainer = document.getElementById("card-container");
+  const cardInner = document.getElementById("card-inner");
+  const cardBack = document.getElementById("card-back");
+  const cardFront = document.getElementById("card-front");
 
   const labelUser = document.getElementById("label-user");
   const labelCard = document.getElementById("label-card");
   const labelRarity = document.getElementById("label-rarity");
 
-  if (!packWrapper || !packBase || !packFlap || !cardWrapper || !cardImg) {
-    console.error("❌ Missing DOM elements for pack alert overlay.");
-    return;
+  const scene = document.getElementById("pack-scene");
+
+  // -------------------------------
+  // DATA PLUMBING
+  // -------------------------------
+  const userName = data?.user || data?.displayName || "";
+  const cardName = data?.card?.name || "";
+  const rarity = (data?.card?.rarity || data?.rarity || "common").toLowerCase();
+  const cardImageUrl = data?.card?.imageUrl || "/placeholder-card.png";
+
+  if (labelUser) labelUser.textContent = userName ? `${userName} pulled:` : "";
+  if (labelCard) labelCard.textContent = cardName || "";
+  if (labelRarity) labelRarity.textContent = rarity.toUpperCase();
+
+  cardFront.src = cardImageUrl;
+
+  cardContainer.classList.remove(
+    "rarity-common",
+    "rarity-uncommon",
+    "rarity-rare",
+    "rarity-epic",
+    "rarity-legendary"
+  );
+
+  switch (rarity) {
+    case "uncommon":
+      cardContainer.classList.add("rarity-uncommon");
+      break;
+    case "rare":
+      cardContainer.classList.add("rarity-rare");
+      break;
+    case "epic":
+      cardContainer.classList.add("rarity-epic");
+      break;
+    case "legendary":
+    case "mythic":
+      cardContainer.classList.add("rarity-legendary");
+      break;
+    default:
+      cardContainer.classList.add("rarity-common");
   }
 
-  // Label text
-  labelUser.textContent = data?.user ? `${data.user} opened a pack!` : "";
-  labelCard.textContent = data?.card?.name || "";
-  labelRarity.textContent = data?.rarity || "";
+  // -------------------------------
+  // CREATE SPARKS / DEBRIS ONCE
+  // -------------------------------
+  let sparks = document.querySelectorAll(".spark");
+  let debris = document.querySelectorAll(".debris");
 
-  // FRONT art (from payload) & BACK art (generic card back)
-  const frontSrc = data?.card?.imageUrl || "/placeholder-card.png";
-  const backSrc = "/placeholder-card-back.png"; // create this asset; fallback below
+  if (sparks.length === 0) {
+    for (let i = 0; i < 28; i++) {
+      const s = document.createElement("div");
+      s.classList.add("spark");
+      scene.appendChild(s);
+    }
+    sparks = document.querySelectorAll(".spark");
+  }
 
-  // Start with BACK showing (if back asset exists)
-  cardImg.src = backSrc;
-  cardImg.onerror = () => {
-    // fallback if back image missing
-    cardImg.src = "/placeholder-card.png";
-  };
+  if (debris.length === 0) {
+    for (let i = 0; i < 28; i++) {
+      const d = document.createElement("div");
+      d.classList.add("debris");
+      scene.appendChild(d);
+    }
+    debris = document.querySelectorAll(".debris");
+  }
 
-  // Reset transforms
-  gsap.killTweensOf([scene, packWrapper, packBase, packFlap, cardWrapper, cardImg, flash, ...sparks]);
-  gsap.set(scene, { opacity: 1 });
+  // -------------------------------
+  // HARD RESET
+  // -------------------------------
+  gsap.set(
+    [pack, flap, body, cardContainer, cardInner, cardBack, cardFront, packFoil, scene],
+    { clearProps: "all" }
+  );
 
-  gsap.set(packWrapper, {
-    xPercent: -50,
-    yPercent: -50,
-    scale: 0.2,
-    rotationY: -180,
+  if (bodyWrapper) bodyWrapper.classList.remove("torn");
+
+  gsap.set(pack, {
+    opacity: 1,
+    scale: 0.8,
+    rotationX: 25,
+    rotationY: -35,
+    rotationZ: 0,
+    z: -600,
+    x: 0,
+    y: 0,
+    transformOrigin: "center center"
+  });
+
+  gsap.set(flap, {
+    opacity: 1,
     rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    y: 0,
+    scaleX: 1,
+    scaleY: 1,
+    clipPath: "inset(0 0 74% 0)",
+    transformOrigin: "center bottom"
+  });
+
+  gsap.set(body, {
+    opacity: 1,
+    scaleX: 1,
+    scaleY: 1,
+    clipPath: "inset(26% 0 0 0)",
+    transformOrigin: "center top"
+  });
+
+  gsap.set(packFoil, {
     opacity: 0,
-    transformPerspective: 800,
+    x: -80,
+    backgroundPosition: "0% 50%"
+  });
+
+  gsap.set(cardContainer, {
+    opacity: 0,
+    y: 40,
+    z: -300,
+    scale: 0.8
+  });
+
+  gsap.set(cardInner, {
+    rotationY: 0,
     transformStyle: "preserve-3d"
   });
 
-  gsap.set(packBase, {
-    rotationX: 0,
-    rotationY: 0,
+  gsap.set(cardBack, { rotationY: 0 });
+  gsap.set(cardFront, { rotationY: 180 });
+
+  gsap.set([...sparks, ...debris], {
+    opacity: 0,
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: 1
   });
 
-  gsap.set(packFlap, {
-    opacity: 0,
-    rotationX: 0,
-    rotationY: 0,
+  gsap.set(scene, {
+    x: 0,
     y: 0
   });
 
-  gsap.set(cardWrapper, {
-    xPercent: -50,
-    yPercent: -50,
-    y: 80,
-    opacity: 0,
-    rotationY: 0,
-    rotationX: 0,
-    scale: 0.7,
-    transformPerspective: 800,
-    transformStyle: "preserve-3d"
+  // -------------------------------
+  // TIMELINE
+  // -------------------------------
+  const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+  // PACK ENTER (with 3D move-in)
+  tl.to(pack, {
+    duration: 1.2,
+    z: -150,
+    rotationX: 12,
+    rotationY: -10,
+    scale: 1,
+    ease: "power3.out"
   });
 
-  gsap.set(cardImg, {
-    rotationY: 0,
-    backfaceVisibility: "hidden"
-  });
+  tl.to(
+    pack,
+    {
+      duration: 1.0,
+      z: 0,
+      rotationY: 360,
+      rotationX: 0,
+      ease: "expo.out"
+    },
+    "-=0.7"
+  );
 
-  gsap.set(flash, { opacity: 0, scale: 0.8 });
+  // FOIL SHIMMER DURING ENTRY
+  tl.to(
+    packFoil,
+    {
+      duration: 0.8,
+      opacity: 0.7,
+      x: 60,
+      ease: "power2.out"
+    },
+    "-=0.9"
+  );
 
-  sparks.forEach((s) => {
-    gsap.set(s, {
+  tl.to(
+    packFoil,
+    {
+      duration: 0.5,
       opacity: 0,
+      ease: "power1.out"
+    },
+    "-=0.2"
+  );
+
+  // SQUASH + BEND (dramatic)
+  tl.to(pack, {
+    duration: 0.1,
+    scaleY: 1.12,
+    scaleX: 0.94,
+    rotationX: 30,
+    ease: "power1.inOut"
+  });
+
+  // MICRO CAMERA SHAKE ON SCENE
+  tl.to(
+    scene,
+    {
+      duration: 0.1,
+      x: "+=6",
+      y: "+=4",
+      yoyo: true,
+      repeat: 3,
+      ease: "power1.inOut"
+    },
+    "-=0.08"
+  );
+
+  // PACK LOCAL SHAKE
+  tl.to(
+    pack,
+    {
+      duration: 0.1,
+      x: "+=8",
+      y: "+=4",
+      rotationZ: 2,
+      yoyo: true,
+      repeat: 3
+    },
+    "-=0.08"
+  );
+
+  // TEAR START (clean straight tear)
+  tl.add("tearStart", "-=0.02");
+
+  tl.to(
+    flap,
+    {
+      duration: 0.18,
+      rotationX: -70,
+      y: -20,
+      ease: "power1.out"
+    },
+    "tearStart"
+  );
+
+  tl.to(
+    flap,
+    {
+      duration: 0.55,
+      rotationX: -150,
+      rotationZ: 20,
+      y: -260,
+      opacity: 0,
+      ease: "power3.in"
+    },
+    "tearStart+=0.04"
+  );
+
+  // body flex (3D bend)
+  tl.to(
+    body,
+    {
+      duration: 0.18,
+      scaleY: 0.9,
+      rotationX: -10,
+      ease: "power2.out"
+    },
+    "tearStart"
+  );
+
+  // show torn paper edge
+  tl.call(
+    () => {
+      if (bodyWrapper) bodyWrapper.classList.add("torn");
+    },
+    null,
+    "tearStart+=0.08"
+  );
+
+  // SPARKS + DEBRIS ONLY (no flash)
+  sparks.forEach((spark) => {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 160 + Math.random() * 120;
+
+    tl.to(
+      spark,
+      {
+        duration: 0.08,
+        opacity: 1
+      },
+      "tearStart"
+    );
+
+    tl.to(
+      spark,
+      {
+        duration: 0.7 + Math.random() * 0.3,
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed,
+        rotation: Math.random() * 360,
+        scale: 0.23,
+        opacity: 0,
+        ease: "power3.out"
+      },
+      "tearStart+=0.02"
+    );
+  });
+
+  debris.forEach((d) => {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 130 + Math.random() * 120;
+
+    tl.to(
+      d,
+      {
+        duration: 0.08,
+        opacity: 1,
+        scale: 0.7 + Math.random()
+      },
+      "tearStart"
+    );
+
+    tl.to(
+      d,
+      {
+        duration: 0.8,
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed,
+        rotation: -50 + Math.random() * 100,
+        opacity: 0,
+        ease: "power2.out"
+      },
+      "tearStart+=0.04"
+    );
+  });
+
+  // BODY FALLS AWAY
+  tl.to(
+    body,
+    {
+      duration: 0.7,
+      opacity: 0,
+      scale: 0.8,
+      rotationX: 10,
+      ease: "power2.inOut"
+    },
+    "tearStart+=0.12"
+  );
+
+  // CARD RISE + FLIP
+  tl.add("cardRise", "tearStart+=0.1");
+
+  tl.to(
+    cardContainer,
+    {
+      duration: 0.6,
+      opacity: 1,
+      y: -60,
+      z: 80,
+      scale: 1,
+      ease: "back.out(1.6)"
+    },
+    "cardRise"
+  );
+
+  tl.to(
+    cardInner,
+    {
+      duration: 0.6,
+      rotationY: 180,
+      ease: "power3.inOut"
+    },
+    "cardRise+=0.28"
+  );
+
+  // HOLD, THEN FADE
+  tl.to(cardContainer, {
+    duration: 0.6,
+    opacity: 0,
+    y: -20,
+    scale: 0.9,
+    delay: 3,
+    ease: "power2.in"
+  });
+
+  // reset camera shake
+  tl.to(
+    scene,
+    {
+      duration: 0.2,
       x: 0,
       y: 0,
-      scale: gsap.utils.random(0.8, 1.2)
-    });
-  });
+      ease: "power1.inOut"
+    },
+    "-=0.4"
+  );
 
-  let flippedToFront = false;
-
-  const tl = gsap.timeline();
-
-  // 1️⃣ CINEMATIC PACK ENTRY: slow zoom with 3D 360 on Y
-  tl.to(packWrapper, {
-    duration: 2.0,        // S2 (dramatic slow)
-    scale: 1.05,
-    rotationY: 360,
-    opacity: 1,
-    ease: "power3.out"
-  });
-
-  // Smooth straighten & settle
-  tl.to(packWrapper, {
-    duration: 0.5,
-    rotationY: 0,
-    scale: 1.0,
-    ease: "power2.out"
-  }, "-=0.3");
-
-  // 2️⃣ REAL TEAR: top flap separates, base stays missing top
-  tl.add(() => {
-    playSfx("sfx-rip");
-  }, "+=0.05");
-
-  // Flash & start showing flap
-  tl.to(flash, {
-    duration: 0.1,
-    opacity: 1,
-    scale: 1.1,
-    ease: "power2.out"
-  }, "-=0.05").to(flash, {
-    duration: 0.25,
-    opacity: 0,
-    scale: 1.4,
-    ease: "power2.in"
-  }, "-=0.05");
-
-  // Reveal flap at the top
-  tl.to(packFlap, {
-    duration: 0.05,
-    opacity: 1
-  }, "-=0.15");
-
-  // Bend flap backward (like foil being ripped)
-  tl.to(packFlap, {
-    duration: 0.25,
-    rotationX: -130,
-    ease: "power1.in"
-  }, "-=0.1");
-
-  // Flap flies upward and off to the side
-  tl.to(packFlap, {
-    duration: 0.6,
-    y: -180,
-    rotationY: -20,
-    rotationX: -160,
-    opacity: 0,
-    ease: "power2.in"
-  }, "-=0.02");
-
-  // Small pack squash during tear for impact
-  tl.to(packWrapper, {
-    duration: 0.15,
-    scaleY: 0.94
-  }, "-=0.4").to(packWrapper, {
-    duration: 0.2,
-    scaleY: 1.0
-  }, "-=0.25");
-
-  // Simple sparks from tear line
-  tl.add(() => {
-    sparks.forEach((s) => {
-      const angle = gsap.utils.random(-80, 80);
-      const dist = gsap.utils.random(60, 130);
-      const dur = gsap.utils.random(0.3, 0.7);
-      gsap.fromTo(s,
-        {
-          opacity: 1,
-          x: 0,
-          y: 0
-        },
-        {
-          opacity: 0,
-          x: Math.cos(angle * Math.PI / 180) * dist,
-          y: Math.sin(angle * Math.PI / 180) * dist,
-          duration: dur,
-          ease: "power1.out"
-        }
-      );
-    });
-  }, "-=0.25");
-
-  // Wait a beat before card reveal (anticipation)
-  tl.to({}, { duration: 0.4 });
-
-  // 3️⃣ CARD RISES SHOWING BACK, THEN FLIPS TO FRONT
-  tl.add(() => {
-    playSfx("sfx-reveal");
-  }, "+=0.05");
-
-  // Card rises from inside pack (back showing)
-  tl.to(cardWrapper, {
-    duration: 0.7,
-    opacity: 1,
-    y: -80,
-    ease: "power2.out"
-  }, "-=0.05");
-
-  // Flip in 3D: show back -> rotate -> show front mid-flip
-  tl.to(cardWrapper, {
-    duration: 0.7,
-    rotationY: 180,
-    ease: "power2.inOut",
-    onUpdate: function () {
-      if (!flippedToFront && this.progress() > 0.5) {
-        flippedToFront = true;
-        cardImg.src = frontSrc;  // switch to front art mid-flip
-      }
-    }
-  }, "-=0.4");
-
-  // Card settles forward over pack, slightly bigger to cover it
-  tl.to(cardWrapper, {
-    duration: 0.6,
-    y: -30,
-    scale: 1.1,
-    ease: "power3.out"
-  }, "-=0.2");
-
-  // Pack subtly recedes
-  tl.to(packWrapper, {
-    duration: 0.5,
-    scale: 0.95,
-    ease: "power1.out"
-  }, "<");
-
-  // 4️⃣ OUTRO: zoom/fade both away
-  tl.to([cardWrapper, packWrapper], {
-    duration: 0.8,
-    scale: 0.5,
-    y: "+=140",
-    opacity: 0,
-    ease: "power2.in"
-  }, "+=0.7");
-
-  tl.to(scene, {
-    duration: 0.3,
-    opacity: 0,
-    ease: "power1.in",
-    onComplete: () => {
-      gsap.set(scene, { opacity: 1 });
-      gsap.set([packWrapper, cardWrapper, packFlap], { opacity: 0 });
-    }
-  }, "-=0.2");
+  return tl;
 };
