@@ -1,6 +1,4 @@
-// src/backend/src/server.js
 require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -16,50 +14,38 @@ const { startWs } = require("./realtime/wsServer");
 
 const app = express();
 
-// ---------------------
-// CORS
-// ---------------------
+// ----- CORS -----
 app.use(
   cors({
     origin: true,
-    credentials: true,
+    credentials: true
   })
 );
 
-// ---------------------
-// Body parsing
-// ---------------------
+// ----- Body Parsing -----
 app.use(bodyParser.json());
 
-// ---------------------
-// Cookie session
-// ---------------------
+// ----- Cookies -----
 app.use(
   cookieSession({
     name: "session",
     keys: [process.env.SESSION_SECRET || "dev_secret"],
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000
   })
 );
 
-// ---------------------
-// Serve static overlay files
-// ---------------------
+// ----- Static Overlay Files -----
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-// ---------------------
-// Routes
-// ---------------------
+// ----- ROUTES -----
 app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
 app.use("/admin", adminRoutes);
 
-// IMPORTANT — MUST BE BEFORE 404s
+// ⚠️ EventSub MUST be before any 404 catches
 app.use("/eventsub", eventsubRoutes);
 
-// ---------------------
-// Start Server
-// ---------------------
+// ----- START SERVER -----
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
