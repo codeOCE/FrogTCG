@@ -1,4 +1,6 @@
+// src/backend/src/server.js
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -14,7 +16,9 @@ const { startWs } = require("./realtime/wsServer");
 
 const app = express();
 
-// ---------- CORS ----------
+// ---------------------
+// CORS
+// ---------------------
 app.use(
   cors({
     origin: true,
@@ -22,10 +26,14 @@ app.use(
   })
 );
 
-// ---------- Body Parsing (normal requests) ----------
+// ---------------------
+// Body parsing
+// ---------------------
 app.use(bodyParser.json());
 
-// ---------- Cookies for login ----------
+// ---------------------
+// Cookie session
+// ---------------------
 app.use(
   cookieSession({
     name: "session",
@@ -34,25 +42,28 @@ app.use(
   })
 );
 
-// ---------- Serve static assets (overlay files) ----------
+// ---------------------
+// Serve static overlay files
+// ---------------------
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-// ---------- ROUTES ----------
+// ---------------------
+// Routes
+// ---------------------
 app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
 app.use("/admin", adminRoutes);
 
-// IMPORTANT — must come BEFORE any 404 or static fallback
+// IMPORTANT — MUST BE BEFORE 404s
 app.use("/eventsub", eventsubRoutes);
 
-// ---------- Optional Health Check ----------
-app.get("/health", (req, res) => res.send("OK"));
-
-// ---------- SERVER ----------
+// ---------------------
+// Start Server
+// ---------------------
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
-  console.log(`🌍 PUBLIC URL: ${process.env.PUBLIC_URL}`);
+  console.log(`🌍 Public URL: ${process.env.PUBLIC_URL}`);
 });
 
 startWs(server);
