@@ -106,6 +106,15 @@ router.post("/callback", express.json(), async (req, res) => {
 // -----------------------------
 // Create EventSub Subscription
 // -----------------------------
+
+// Allow GET /subscribe for browser testing
+router.get("/subscribe", async (req, res) => {
+  console.log("📌 GET /eventsub/subscribe → redirecting to POST handler");
+  req.method = "POST";
+  router.handle(req, res);
+});
+
+
 router.post("/subscribe", async (req, res) => {
   try {
     console.log("🚀 Requesting Twitch app token...");
