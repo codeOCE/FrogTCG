@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { useAuth } from "@/hooks/useAuth";
 import BinderSlot from "../components/BinderSlot";
 
 export default function Binder() {

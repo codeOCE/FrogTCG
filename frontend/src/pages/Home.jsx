@@ -1,4 +1,4 @@
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
@@ -12,11 +12,11 @@ export default function Home() {
 
       {/* Background Glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-green-500/20 blur-[140px] rounded-full"></div>
+        <div className="absolute top-32 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-green-500/20 blur-[160px] rounded-full"></div>
       </div>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-16 text-center px-6">
+      <section className="pt-32 pb-16 text-center px-6 relative z-10">
         <h1 className="text-5xl font-extrabold tracking-tight drop-shadow-xl">
           Build Your Ultimate
           <span className="text-green-400 block mt-2">Frog TCG Collection</span>
@@ -24,15 +24,29 @@ export default function Home() {
 
         <p className="max-w-xl mx-auto text-lg text-gray-300 mt-6 leading-relaxed">
           Open packs on stream, collect cards, fill out your online binder,
-          and trade with the community — all powered by Twitch integration.
+          and trade with the community.
         </p>
 
+        {/* Buttons */}
         <div className="mt-10 flex justify-center gap-6">
+
+          {/* 🔥 Twitch Login Button */}
           {!user && (
             <button
               onClick={login}
-              className="px-8 py-3 bg-green-500 hover:bg-green-600 text-black text-lg font-semibold rounded-xl shadow-lg transition"
+              className="flex items-center gap-3 px-8 py-3 bg-[#9146FF] hover:bg-[#772ce8] text-white text-lg font-semibold rounded-xl shadow-lg transition"
             >
+              {/* Twitch Logo */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="white"
+                viewBox="0 0 24 24"
+                width="26"
+                height="26"
+              >
+                <path d="M3 2L2 6v14h5v2h3l2-2h4l5-5V2H3zm18 11l-3 3h-5l-2 2v-2H7V4h14v9zM14 6h2v5h-2V6zm-4 0h2v5H10V6z" />
+              </svg>
+
               Login with Twitch
             </button>
           )}
@@ -54,11 +68,12 @@ export default function Home() {
               </Link>
             </>
           )}
+
         </div>
       </section>
 
       {/* Card Showcase */}
-      <section className="mt-10 pb-24 px-6">
+      <section className="mt-10 pb-24 px-6 relative z-10">
         <h2 className="text-center text-3xl font-bold mb-10 drop-shadow">
           Featured Cards
         </h2>

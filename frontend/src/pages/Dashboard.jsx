@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import DashboardTile from "../components/DashboardTile";
 import RecentPullCard from "../components/RecentPullCard";
 import StatsBar from "../components/StatsBar";
