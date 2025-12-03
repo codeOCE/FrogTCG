@@ -1,115 +1,106 @@
 const express = require("express");
 const router = express.Router();
-const { PrismaClient } = require("@prisma/client");
-const { broadcast } = require("../realtime/wsServer");
+const prisma = require("../prisma"); // ← Make sure this points to your prisma client
 
-const prisma = new PrismaClient();
-
-/* -------------------------------------------------------
-   RARITY WEIGHTS
-------------------------------------------------------- */
-const RARITY_WEIGHTS = {
-  common: 70,
-  uncommon: 20,
-  rare: 8,
-  epic: 2,
-};
-
-// Choose rarity using weighted probabilities
-function getRandomRarity() {
-  const total =
-    RARITY_WEIGHTS.common +
-    RARITY_WEIGHTS.uncommon +
-    RARITY_WEIGHTS.rare +
-    RARITY_WEIGHTS.epic;
-
-  let roll = Math.random() * total;
-
-  for (const rarity in RARITY_WEIGHTS) {
-    roll -= RARITY_WEIGHTS[rarity];
-    if (roll <= 0) return rarity;
+// Middleware: ensure the user is authenticated
+// You said you're using Twitch OAuth session → so req.session.user should exist
+function requireUser(req, res, next) {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
-
-  return "common"; // fallback
+  next();
 }
 
-/* -------------------------------------------------------
-   OPEN PACK ENDPOINT
-------------------------------------------------------- */
-router.post("/packs/open", async (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).json({ error: "Not logged in" });
-  }
-
-  const userId = req.session.user.id;
-
+// -------------------------------------------------------------
+// GET /api/user/stats
+// -------------------------------------------------------------
+router.get("/user/stats", requireUser, async (req, res) => {
   try {
-    const rarity = getRandomRarity();
+    const userId = req.session.user.id;
 
-    const cards = await prisma.card.findMany({
-      where: { rarity },
+    // Count total cards
+    const totalCards = await prisma.ownedCard.count({
+      where: { userId },
     });
 
-    if (cards.length === 0) {
-      return res.status(500).json({
-        error: `No cards available for rarity: ${rarity}`,
-      });
-    }
+    // Count unique cards
+    const uniqueCards = await prisma.ownedCard.findMany({
+      where: { userId },
+      select: { cardId: true },
+    });
+    const uniqueCount = new Set(uniqueCards.map(c => c.cardId)).size;
 
-    const card =
-      cards[Math.floor(Math.random() * cards.length)];
+    // Count rarity breakdown
+    const rarityCounts = await prisma.ownedCard.groupBy({
+      by: ["cardId"],
+      _count: true,
+    });
 
-    const owned = await prisma.ownedCard.create({
-      data: {
-        userId,
-        cardId: card.id,
+    const cardInfo = await prisma.card.findMany({
+      where: {
+        id: { in: rarityCounts.map(r => r.cardId) }
       },
+      select: { id: true, rarity: true }
     });
 
-    // 🔥 Broadcast the pack opening to OBS
-    broadcast({
-      type: "PACK_OPENED",
-      user: req.session.user.displayName,
-      rarity,
-      card: {
-        id: card.id,
-        name: card.name,
-        rarity: card.rarity,
-        imageUrl: card.imageUrl,
-      },
+    const rarityBreakdown = {
+      common: 0,
+      uncommon: 0,
+      rare: 0,
+      epic: 0,
+      legendary: 0,
+      mythic: 0,
+    };
+
+    cardInfo.forEach(card => {
+      const rarity = card.rarity.toLowerCase();
+      if (rarityBreakdown[rarity] !== undefined) {
+        rarityBreakdown[rarity]++;
+      }
     });
 
-    return res.json({
-      success: true,
-      rarity,
-      card,
+    // Return stats
+    res.json({
+      totalCards,
+      uniqueCards: uniqueCount,
+      rarityBreakdown,
     });
+
   } catch (err) {
-    console.error("Pack open error:", err);
-    return res.status(500).json({ error: "Failed to open pack" });
+    console.error("Stats error:", err);
+    res.status(500).json({ error: "Failed to load stats" });
   }
 });
 
-/* -------------------------------------------------------
-   GET USER'S BINDER (ALL CARDS THEY OWN)
-------------------------------------------------------- */
-router.get("/binder", async (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).json({ error: "Not logged in" });
-  }
-
+// -------------------------------------------------------------
+// GET /api/user/recent
+// -------------------------------------------------------------
+router.get("/user/recent", requireUser, async (req, res) => {
   try {
-    const cards = await prisma.ownedCard.findMany({
-      where: { userId: req.session.user.id },
+    const userId = req.session.user.id;
+
+    const pulls = await prisma.ownedCard.findMany({
+      where: { userId },
+      orderBy: { acquiredAt: "desc" },
+      take: 10,
       include: {
-        card: true, // Includes card details
+        card: true,
       },
     });
 
-    return res.json({ cards });
+    const formatted = pulls.map(p => ({
+      id: p.id,
+      name: p.card.name,
+      rarity: p.card.rarity,
+      imageUrl: p.card.imageUrl,
+      acquiredAt: p.acquiredAt,
+    }));
+
+    res.json(formatted);
+
   } catch (err) {
-    console.error("Binder error:", err);
-    return res.status(500).json({ error: "Failed to fetch binder" });
+    console.error("Recent error:", err);
+    res.status(500).json({ error: "Failed to load recent cards" });
   }
 });
 

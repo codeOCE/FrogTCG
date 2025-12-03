@@ -1,68 +1,197 @@
+/* --------------------------------------------------
+   Tailwind 4 - Core Import
+-------------------------------------------------- */
+@import "tailwindcss";
+
+/* --------------------------------------------------
+   Dark UI + Global Styling
+-------------------------------------------------- */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  color-scheme: dark;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --bg-deep: #050912;
+  --bg-elevated: #090f1d;
+  --bg-elevated-soft: #0c1221;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --frog-green: #42f59b;
+  --frog-green-soft: #3bd987;
+  --frog-purple: #a855f7;
+  --frog-gold: #fbbf24;
+
+  /* Rarity colors */
+  --rarity-common: #9ca3af;
+  --rarity-uncommon: #22c55e;
+  --rarity-rare: #3b82f6;
+  --rarity-epic: #a855f7;
+  --rarity-legendary: #f97316;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+html,
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* --------------------------------------------------
+   Scrollbar Styling (Beautiful minimal)
+-------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-button {
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --------------------------------------------------
+   Card Hover FX
+-------------------------------------------------- */
+
+.card-hover {
+  @apply transition-transform duration-300 ease-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.02);
+}
+
+/* --------------------------------------------------
+   Rarity Tags
+-------------------------------------------------- */
+
+.rarity-common {
+  background-color: var(--rarity-common);
+}
+
+.rarity-uncommon {
+  background-color: var(--rarity-uncommon);
+}
+
+.rarity-rare {
+  background-color: var(--rarity-rare);
+}
+
+.rarity-epic {
+  background-color: var(--rarity-epic);
+}
+
+.rarity-legendary {
+  background-color: var(--rarity-legendary);
+}
+
+/* --------------------------------------------------
+   Froggy Glow Borders
+-------------------------------------------------- */
+
+.border-glow-green {
+  box-shadow: 0 0 25px rgba(66, 245, 155, 0.35);
+}
+
+.border-glow-purple {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.35);
+}
+
+.border-glow-gold {
+  box-shadow: 0 0 25px rgba(249, 115, 22, 0.35);
+}
+
+/* Binder page surface */
+.binder-page {
+  background: linear-gradient(145deg, #0f1526 0%, #070a12 100%);
+  box-shadow: 
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 0 25px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+}
+
+/* Gloss streak across the binder page */
+.binder-gloss {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(
+    75deg,
+    rgba(255,255,255,0.05) 0%,
+    rgba(255,255,255,0.01) 40%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* Pocket style slot */
+.binder-slot {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.08),
+    rgba(255,255,255,0.02)
+  );
+  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+}
+
+/* Pocket shine */
+.slot-shine {
+  position: absolute;
+  top: -100%; left: 0;
+  width: 100%; height: 200%;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.15),
+    transparent 70%
+  );
+  transform: rotate(12deg);
+  pointer-events: none;
+}
+
+/* Rarity Glow (behind card) */
+.rarity-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  filter: blur(22px);
+  opacity: 0.6;
+}
+
+.glow-common { background: rgb(120 120 120 / 0.3); }
+.glow-uncommon { background: rgb(50 150 255 / 0.3); }
+.glow-rare { background: rgb(80 0 255 / 0.4); }
+.glow-epic { background: rgb(255 0 180 / 0.4); }
+.glow-legendary { background: rgb(255 180 0 / 0.5); }
+
+/* Page turn animation */
+@keyframes pageTurn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) rotateY(10deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotateY(0deg);
+  }
+}
+.animate-pageTurn {
+  animation: pageTurn 0.5s ease-out;
+}
+
+/* Buttons */
+.binder-btn {
+  background: #141b2c;
+  padding: 8px 14px;
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  transition: 0.2s ease;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.binder-btn:hover {
+  background: #1d263d;
 }

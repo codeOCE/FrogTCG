@@ -39,7 +39,7 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 
 // ----- ROUTES -----
 app.use("/auth", authRoutes);
-app.use("/api", apiRoutes);
+app.use("/api", require("./routes/api"));
 app.use("/admin", adminRoutes);
 
 // ⚠️ EventSub MUST be before any 404 catches

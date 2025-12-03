@@ -1,82 +1,120 @@
-// backend/src/routes/auth.js
 const express = require("express");
 const router = express.Router();
-
-const { PrismaClient } = require("@prisma/client"); // ✅ your original working Prisma
-const prisma = new PrismaClient();
+const fetch = require("node-fetch");
+const prisma = require("../lib/prisma");
 
 require("dotenv").config();
 
-const {
-  twitchAuthUrl,
-  exchangeCodeForToken,
-  getTwitchUser,
-} = require("../lib/twitch");
+const CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
+const REDIRECT_URI = process.env.TWITCH_REDIRECT_URI;
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
+// ---------------------------------------------------------------------------
 // STEP 1 — Redirect user to Twitch login
+// ---------------------------------------------------------------------------
 router.get("/login", (req, res) => {
-  res.redirect(twitchAuthUrl());
+  const scope = [
+    "user:read:email",
+    "channel:read:redemptions",
+    "channel:manage:redemptions"
+  ].join("+");
+
+  const twitchAuthUrl =
+    `https://id.twitch.tv/oauth2/authorize?` +
+    `client_id=${CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&response_type=code` +
+    `&scope=${scope}`;
+
+  return res.redirect(twitchAuthUrl);
 });
 
-// STEP 2 — Handle callback from Twitch
+// ---------------------------------------------------------------------------
+// STEP 2 — Twitch redirects back here with ?code=xxxx
+// ---------------------------------------------------------------------------
 router.get("/callback", async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) {
+    console.log("⚠ No code provided to /auth/callback");
+    return res.status(400).send("No code provided");
+  }
+
   try {
-    const code = req.query.code;
-    if (!code) return res.status(400).send("No code provided");
+    // Exchange code for OAuth tokens
+    const tokenRes = await fetch("https://id.twitch.tv/oauth2/token", {
+      method: "POST",
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: REDIRECT_URI,
+      }),
+    });
 
-    // Exchange Twitch OAuth code
-    const tokenData = await exchangeCodeForToken(code);
-    const twitchUser = await getTwitchUser(tokenData.access_token);
+    const tokenData = await tokenRes.json();
 
-    // ⭐ If this is your broadcaster account, log token for EventSub
-    if (
-      process.env.TWITCH_BROADCASTER_ID &&
-      twitchUser.id === process.env.TWITCH_BROADCASTER_ID
-    ) {
-      console.log("⭐ Broadcaster logged in via OAuth");
-      console.log(
-        "➡️  Add this to Render as BROADCASTER_USER_TOKEN:\n",
-        tokenData.access_token
-      );
+    if (!tokenData.access_token) {
+      console.log("❌ Error fetching Twitch token:", tokenData);
+      return res.status(500).send("Failed to exchange code for token.");
     }
 
-    // Create or update user in DB
+    const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+
+    // -----------------------------------------------------------------------
+    // STEP 3 — Get user info from Twitch
+    // -----------------------------------------------------------------------
+    const userRes = await fetch("https://api.twitch.tv/helix/users", {
+      headers: {
+        "Client-ID": CLIENT_ID,
+        "Authorization": `Bearer ${accessToken}`,
+      },
+    });
+
+    const userData = await userRes.json();
+    const twitchUser = userData.data?.[0];
+
+    if (!twitchUser) {
+      console.log("❌ Error retrieving Twitch user:", userData);
+      return res.status(500).send("Could not retrieve Twitch user.");
+    }
+
+    // -----------------------------------------------------------------------
+    // STEP 4 — Store user in database
+    // -----------------------------------------------------------------------
     const user = await prisma.user.upsert({
       where: { twitchId: twitchUser.id },
       update: {
         displayName: twitchUser.display_name,
         profileImage: twitchUser.profile_image_url,
+        accessToken,
+        refreshToken,
       },
       create: {
         twitchId: twitchUser.id,
         displayName: twitchUser.display_name,
         profileImage: twitchUser.profile_image_url,
+        accessToken,
+        refreshToken,
       },
     });
 
-    // Store session
-    req.session.user = {
-      id: user.id,
-      twitchId: user.twitchId,
-      displayName: user.displayName,
-    };
+    // -----------------------------------------------------------------------
+    // STEP 5 — Save session + redirect to admin dashboard
+    // -----------------------------------------------------------------------
+    req.session.userId = user.id;
 
-    res.redirect(process.env.FRONTEND_URL || "http://localhost:5173/dashboard");
+    console.log("✅ Logged in:", user.displayName);
+
+    return res.redirect("https://codeoce.com/dashboard");
+
   } catch (err) {
-    console.error("Auth callback error:", err);
-    res.status(500).send("Authentication failed");
+    console.error("❌ Auth callback error:", err);
+    return res.status(500).send("Authentication error.");
   }
-});
-
-// Return session user
-router.get("/me", async (req, res) => {
-  if (!req.session.user) return res.json({ loggedIn: false });
-
-  const user = await prisma.user.findUnique({
-    where: { id: req.session.user.id },
-  });
-
-  return res.json({ loggedIn: true, user });
 });
 
 module.exports = router;
